@@ -15,6 +15,18 @@ class UserViewModel: ObservableObject {
         }
     }
     
+    // Level Up State
+    @Published var showingLevelUp = false
+    @Published var lastLeveledUpTo = 0
+    
+    // Shop Items
+    @Published var shopItems: [Item] = [
+        Item(name: "Dumbbells", description: "+5 Strength", icon: "dumbbell.fill", price: 50, statBoost: .strength, boostAmount: 5),
+        Item(name: "Encyclopedia", description: "+5 Intelligence", icon: "book.fill", price: 75, statBoost: .intelligence, boostAmount: 5),
+        Item(name: "Herbal Tea", description: "+5 Vitality", icon: "cup.and.saucer.fill", price: 30, statBoost: .vitality, boostAmount: 5),
+        Item(name: "Stylish Fedora", description: "+5 Charisma", icon: "hat.widebrim.fill", price: 100, statBoost: .charisma, boostAmount: 5)
+    ]
+    
     // CloudKit sync state
     @Published var isSyncing = false
     @Published var lastCloudSync: Date?
@@ -189,9 +201,31 @@ class UserViewModel: ObservableObject {
         if let index = habits.firstIndex(where: { $0.id == habit.id }) {
             habits[index].lastCompletedDate = Date()
             addExperience(habit.xpReward)
+            // Reward some gold too!
+            user.gold += habit.xpReward / 2
             saveHabits()
             uploadToCloud()
         }
+    }
+    
+    func buyItem(_ item: Item) {
+        guard user.gold >= item.price else { return }
+        
+        user.gold -= item.price
+        user.inventory.append(item)
+        
+        // Apply stat boost immediately
+        if let boost = item.statBoost {
+            switch boost {
+            case .strength: user.strength += item.boostAmount
+            case .intelligence: user.intelligence += item.boostAmount
+            case .vitality: user.vitality += item.boostAmount
+            case .charisma: user.charisma += item.boostAmount
+            }
+        }
+        
+        saveUser()
+        uploadToCloud()
     }
     
     func addExperience(_ amount: Int) {
@@ -201,10 +235,20 @@ class UserViewModel: ObservableObject {
         while user.experience >= user.xpToNextLevel {
             user.experience -= user.xpToNextLevel
             user.level += 1
+            lastLeveledUpTo = user.level
+            
             // Bonus stats on level up
             user.strength += 1
             user.intelligence += 1
             user.vitality += 1
+            
+            // Bonus gold for reaching new heights
+            user.gold += user.level * 20
+            
+            // Trigger animation state
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.showingLevelUp = true
+            }
         }
     }
 }

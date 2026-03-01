@@ -26,6 +26,14 @@ struct DashboardView: View {
                             .font(.headline)
                             .foregroundColor(.secondary)
                         
+                        HStack {
+                            Image(systemName: "banknote.fill")
+                                .foregroundColor(.green)
+                            Text("\(viewModel.user.gold) Gold")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                        }
+                        
                         // XP Bar
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: viewModel.user.xpProgress)
@@ -137,6 +145,10 @@ struct StatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemBackground)).shadow(radius: 1))
     }
+}
+
+#Preview {
+    DashboardView(viewModel: .preview, healthKitManager: HealthKitManager())
 }
 
 struct HealthStatCard: View {

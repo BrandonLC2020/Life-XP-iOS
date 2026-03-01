@@ -12,21 +12,35 @@ struct ContentView: View {
     @StateObject private var healthKitManager = HealthKitManager()
     
     var body: some View {
-        TabView {
-            DashboardView(viewModel: userViewModel, healthKitManager: healthKitManager)
-                .tabItem {
-                    Label("Dashboard", systemImage: "person.circle.fill")
-                }
+        ZStack {
+            TabView {
+                DashboardView(viewModel: userViewModel, healthKitManager: healthKitManager)
+                    .tabItem {
+                        Label("Dashboard", systemImage: "person.circle.fill")
+                    }
+                
+                HabitListView(viewModel: userViewModel)
+                    .tabItem {
+                        Label("Habits", systemImage: "checkmark.circle.fill")
+                    }
+                
+                InventoryView(viewModel: userViewModel)
+                    .tabItem {
+                        Label("Inventory", systemImage: "shippingbox.fill")
+                    }
+                
+                SettingsView(viewModel: userViewModel, healthKitManager: healthKitManager)
+                    .tabItem {
+                        Label("Settings", systemImage: "gearshape.fill")
+                    }
+            }
             
-            HabitListView(viewModel: userViewModel)
-                .tabItem {
-                    Label("Habits", systemImage: "checkmark.circle.fill")
-                }
-            
-            SettingsView(viewModel: userViewModel, healthKitManager: healthKitManager)
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
-                }
+            // Level Up Animation Overlay
+            if userViewModel.showingLevelUp {
+                LevelUpOverlay(level: userViewModel.lastLeveledUpTo, isShowing: $userViewModel.showingLevelUp)
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
         }
         .onAppear {
             healthKitManager.requestAuthorization { success, error in
@@ -89,5 +103,9 @@ struct SettingsView: View {
 }
 
 #Preview {
-    ContentView()
+    let vm = UserViewModel.preview
+    let hm = HealthKitManager()
+    return ContentView()
+        .environmentObject(vm) // Though currently it uses StateObject internally, 
+                               // usually we'd inject for better previews
 }

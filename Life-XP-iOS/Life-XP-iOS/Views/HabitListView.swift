@@ -68,3 +68,7 @@ struct HabitRowView: View {
         .padding(.vertical, 4)
     }
 }
+
+#Preview {
+    HabitListView(viewModel: .preview)
+}

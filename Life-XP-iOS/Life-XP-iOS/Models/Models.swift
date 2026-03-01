@@ -4,12 +4,15 @@ struct LifeXPUser: Codable {
     var name: String = "Adventurer"
     var level: Int = 1
     var experience: Int = 0
+    var gold: Int = 100 // Starting gold
     
     // Stats
     var strength: Int = 10
     var intelligence: Int = 10
     var vitality: Int = 10
     var charisma: Int = 10
+    
+    var inventory: [Item] = []
     
     // Tracking sync to avoid double-counting
     var lastSyncedSteps: Int = 0
@@ -42,6 +45,20 @@ struct LifeXPUser: Codable {
             lastSyncDate = Date()
         }
     }
+}
+
+struct Item: Identifiable, Codable {
+    var id = UUID()
+    var name: String
+    var description: String
+    var icon: String
+    var price: Int
+    var statBoost: StatType?
+    var boostAmount: Int = 0
+}
+
+enum StatType: String, Codable, CaseIterable {
+    case strength, intelligence, vitality, charisma
 }
 
 struct Habit: Identifiable, Codable {
