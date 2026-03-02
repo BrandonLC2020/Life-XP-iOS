@@ -6,7 +6,7 @@ echo "Running tests before push..."
 xcodebuild test \
   -project Life-XP-iOS/Life-XP-iOS.xcodeproj \
   -scheme Life-XP-iOS \
-  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -destination 'platform=iOS Simulator,name=iPhone 16e' \
   -quiet
 
 if [ $? -ne 0 ]; then
