@@ -6,8 +6,8 @@ echo "Running Secret Shield..."
 STAGED_FILES=$(git diff --cached --name-only)
 
 if [ ! -z "$STAGED_FILES" ]; then
-  # Check for common secrets (excluding .skill and binaries)
-  SECRETS_FOUND=$(echo "$STAGED_FILES" | xargs grep -E "API_KEY|SECRET|TOKEN|PASSWORD" 2>/dev/null | grep -v ".skill" | grep -v ".png" | grep -v ".xcassets" | grep -v ".jpg")
+  # Check for common secrets (excluding .skill, binaries, and the hook itself)
+  SECRETS_FOUND=$(echo "$STAGED_FILES" | xargs grep -E "API_KEY|SECRET|TOKEN|PASSWORD" 2>/dev/null | grep -v ".skill" | grep -v ".png" | grep -v ".xcassets" | grep -v ".jpg" | grep -v ".gemini/hooks/" | grep -v "pre-commit")
   if [ ! -z "$SECRETS_FOUND" ]; then
     echo "Error: Possible secrets found in staged files:"
     echo "$SECRETS_FOUND"
