@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# --- Test Safety Net ---
+echo "Running tests before push..."
+
+xcodebuild test \
+  -project Life-XP-iOS/Life-XP-iOS.xcodeproj \
+  -scheme Life-XP-iOS \
+  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -quiet
+
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Please fix tests before pushing."
+  exit 1
+fi
+
+echo "All tests passed. Proceeding with push."
+exit 0
