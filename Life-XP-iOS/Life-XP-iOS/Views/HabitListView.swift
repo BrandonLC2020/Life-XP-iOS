@@ -3,15 +3,15 @@ import SwiftUI
 struct HabitListView: View {
     @ObservedObject var viewModel: UserViewModel
     @State private var showingAddHabit = false
-    
+
     var body: some View {
         NavigationView {
             List {
                 Section(header: Text("Your Daily Habits")) {
                     ForEach(viewModel.habits) { habit in
-                        HabitRowView(habit: habit) {
+                        HabitRowView(habit: habit, onComplete: {
                             viewModel.completeHabit(habit)
-                        }
+                        })
                     }
                     .onDelete(perform: viewModel.deleteHabit)
                 }
@@ -21,9 +21,9 @@ struct HabitListView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         showingAddHabit.toggle()
-                    }) {
+                    }, label: {
                         Image(systemName: "plus")
-                    }
+                    })
                 }
             }
             .sheet(isPresented: $showingAddHabit) {
@@ -36,7 +36,7 @@ struct HabitListView: View {
 struct HabitRowView: View {
     let habit: Habit
     let onComplete: () -> Void
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -55,9 +55,9 @@ struct HabitRowView: View {
                         .foregroundColor(.blue)
                 }
             }
-            
+
             Spacer()
-            
+
             Button(action: onComplete) {
                 Image(systemName: habit.isCompletedToday ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(habit.isCompletedToday ? .green : .blue)

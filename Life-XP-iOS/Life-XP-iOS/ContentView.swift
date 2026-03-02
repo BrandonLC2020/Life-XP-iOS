@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var userViewModel = UserViewModel()
     @StateObject private var healthKitManager = HealthKitManager()
-    
+
     var body: some View {
         ZStack {
             TabView {
@@ -18,23 +18,23 @@ struct ContentView: View {
                     .tabItem {
                         Label("Dashboard", systemImage: "person.circle.fill")
                     }
-                
+
                 HabitListView(viewModel: userViewModel)
                     .tabItem {
                         Label("Habits", systemImage: "checkmark.circle.fill")
                     }
-                
+
                 InventoryView(viewModel: userViewModel)
                     .tabItem {
                         Label("Inventory", systemImage: "shippingbox.fill")
                     }
-                
+
                 SettingsView(viewModel: userViewModel, healthKitManager: healthKitManager)
                     .tabItem {
                         Label("Settings", systemImage: "gearshape.fill")
                     }
             }
-            
+
             // Level Up Animation Overlay
             if userViewModel.showingLevelUp {
                 LevelUpOverlay(level: userViewModel.lastLeveledUpTo, isShowing: $userViewModel.showingLevelUp)
@@ -43,7 +43,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            healthKitManager.requestAuthorization { success, error in
+            healthKitManager.requestAuthorization { success, _ in
                 if success {
                     healthKitManager.fetchTodaySteps()
                 }
@@ -55,7 +55,7 @@ struct ContentView: View {
 struct SettingsView: View {
     @ObservedObject var viewModel: UserViewModel
     @ObservedObject var healthKitManager: HealthKitManager
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -70,13 +70,13 @@ struct SettingsView: View {
                                 .foregroundColor(viewModel.lastCloudSync != nil ? .green : .secondary)
                         }
                     }
-                    
+
                     if let lastSync = viewModel.lastCloudSync {
                         Text("Last Cloud Sync: \(lastSync, style: .relative) ago")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Button("Sync with CloudKit") {
                         viewModel.fetchFromCloud()
                         viewModel.uploadToCloud()
@@ -90,7 +90,7 @@ struct SettingsView: View {
                         Text(healthKitManager.isAuthorized ? "Authorized" : "Not Authorized")
                             .foregroundColor(healthKitManager.isAuthorized ? .green : .red)
                     }
-                    
+
                     Button("Request Permissions") {
                         healthKitManager.requestAuthorization { _, _ in }
                     }
@@ -103,9 +103,9 @@ struct SettingsView: View {
 }
 
 #Preview {
-    let vm = UserViewModel.preview
-    let hm = HealthKitManager()
+    let previewVM = UserViewModel.preview
+    let previewHM = HealthKitManager()
     return ContentView()
-        .environmentObject(vm) // Though currently it uses StateObject internally, 
+        .environmentObject(previewVM) // Though currently it uses StateObject internally,
                                // usually we'd inject for better previews
 }

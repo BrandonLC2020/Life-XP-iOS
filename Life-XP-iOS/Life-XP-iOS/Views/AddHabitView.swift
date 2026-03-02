@@ -3,11 +3,11 @@ import SwiftUI
 struct AddHabitView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: UserViewModel
-    
+
     @State private var title = ""
     @State private var description = ""
     @State private var xpReward = 10
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -15,7 +15,7 @@ struct AddHabitView: View {
                     TextField("Title", text: $title)
                     TextField("Description", text: $description)
                 }
-                
+
                 Section(header: Text("Reward")) {
                     Stepper("\(xpReward) XP", value: $xpReward, in: 5...100, step: 5)
                 }
@@ -29,7 +29,11 @@ struct AddHabitView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        viewModel.addHabit(title: title, description: description, xp: xpReward)
+                        viewModel.addHabit(
+                            title: title,
+                            description: description,
+                            experiencePoints: xpReward
+                        )
                         dismiss()
                     }
                     .disabled(title.isEmpty)

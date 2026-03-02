@@ -20,16 +20,22 @@ extension LifeXPUser {
 extension Habit {
     static let previewHabits = [
         Habit(title: "Hydrate", description: "Drink 2L of water", xpReward: 20, frequency: .daily),
-        Habit(title: "Morning Sprint", description: "Fast jog for 15m", xpReward: 40, frequency: .daily, lastCompletedDate: Date()),
+        Habit(
+            title: "Morning Sprint",
+            description: "Fast jog for 15m",
+            xpReward: 40,
+            frequency: .daily,
+            lastCompletedDate: Date()
+        ),
         Habit(title: "Meditation", description: "10m mindfulness", xpReward: 15, frequency: .daily)
     ]
 }
 
 extension UserViewModel {
     static var preview: UserViewModel {
-        let vm = UserViewModel()
-        vm.user = .preview
-        vm.habits = Habit.previewHabits
-        return vm
+        let previewVM = UserViewModel()
+        previewVM.user = .preview
+        previewVM.habits = Habit.previewHabits
+        return previewVM
     }
 }

@@ -8,51 +8,79 @@ class UserViewModel: ObservableObject {
             saveUser()
         }
     }
-    
+
     @Published var habits: [Habit] = [] {
         didSet {
             saveHabits()
         }
     }
-    
+
     // Level Up State
     @Published var showingLevelUp = false
     @Published var lastLeveledUpTo = 0
-    
+
     // Shop Items
     @Published var shopItems: [Item] = [
-        Item(name: "Dumbbells", description: "+5 Strength", icon: "dumbbell.fill", price: 50, statBoost: .strength, boostAmount: 5),
-        Item(name: "Encyclopedia", description: "+5 Intelligence", icon: "book.fill", price: 75, statBoost: .intelligence, boostAmount: 5),
-        Item(name: "Herbal Tea", description: "+5 Vitality", icon: "cup.and.saucer.fill", price: 30, statBoost: .vitality, boostAmount: 5),
-        Item(name: "Stylish Fedora", description: "+5 Charisma", icon: "hat.widebrim.fill", price: 100, statBoost: .charisma, boostAmount: 5)
+        Item(
+            name: "Dumbbells",
+            description: "+5 Strength",
+            icon: "dumbbell.fill",
+            price: 50,
+            statBoost: .strength,
+            boostAmount: 5
+        ),
+        Item(
+            name: "Encyclopedia",
+            description: "+5 Intelligence",
+            icon: "book.fill",
+            price: 75,
+            statBoost: .intelligence,
+            boostAmount: 5
+        ),
+        Item(
+            name: "Herbal Tea",
+            description: "+5 Vitality",
+            icon: "cup.and.saucer.fill",
+            price: 30,
+            statBoost: .vitality,
+            boostAmount: 5
+        ),
+        Item(
+            name: "Stylish Fedora",
+            description: "+5 Charisma",
+            icon: "hat.widebrim.fill",
+            price: 100,
+            statBoost: .charisma,
+            boostAmount: 5
+        )
     ]
-    
+
     // CloudKit sync state
     @Published var isSyncing = false
     @Published var lastCloudSync: Date?
-    
+
     // Conversion Factors
     private let stepsToXP = 100 // 100 steps = 1 XP
     private let kcalToXP = 10   // 10 kcal = 1 XP
     private let waterToXP = 0.25 // 0.25L (1 cup) = 5 XP
     private let sleepToXP = 1.0  // 1 hour = 10 XP
-    
+
     init() {
         loadUser()
         loadHabits()
         fetchFromCloud()
     }
-    
+
     func fetchFromCloud() {
         isSyncing = true
-        
+
         CloudKitManager.shared.fetchUserStats { [weak self] result in
             DispatchQueue.main.async {
                 self?.isSyncing = false
                 switch result {
                 case .success(let cloudUser):
                     // Simple merge: take the one with more total XP/level
-                    if cloudUser.level > self?.user.level ?? 0 || 
+                    if cloudUser.level > self?.user.level ?? 0 ||
                        (cloudUser.level == self?.user.level ?? 0 && cloudUser.experience > self?.user.experience ?? 0) {
                         self?.user = cloudUser
                         self?.lastCloudSync = Date()
@@ -62,7 +90,7 @@ class UserViewModel: ObservableObject {
                 }
             }
         }
-        
+
         CloudKitManager.shared.fetchHabits { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
@@ -76,7 +104,7 @@ class UserViewModel: ObservableObject {
             }
         }
     }
-    
+
     func uploadToCloud() {
         isSyncing = true
         CloudKitManager.shared.saveUserStats(user) { [weak self] result in
@@ -87,68 +115,68 @@ class UserViewModel: ObservableObject {
                 }
             }
         }
-        
+
         CloudKitManager.shared.saveHabits(habits) { error in
             if let error = error {
                 print("CloudKit Habits Upload Error: \(error.localizedDescription)")
             }
         }
     }
-    
+
     func syncHealthData(steps: Int, calories: Double, sleep: Double, water: Double) {
         user.checkNewDay()
-        
+
         let newSteps = steps - user.lastSyncedSteps
         let newCalories = calories - user.lastSyncedCalories
         let newSleep = sleep - user.lastSyncedSleep
         let newWater = water - user.lastSyncedWater
-        
+
         var totalXPGained = 0
-        
+
         // Steps
         if newSteps >= stepsToXP {
-            let xp = newSteps / stepsToXP
-            totalXPGained += xp
-            user.lastSyncedSteps += xp * stepsToXP
+            let experiencePoints = newSteps / stepsToXP
+            totalXPGained += experiencePoints
+            user.lastSyncedSteps += experiencePoints * stepsToXP
         }
-        
+
         // Calories
         if newCalories >= Double(kcalToXP) {
-            let xp = Int(newCalories / Double(kcalToXP))
-            totalXPGained += xp
-            user.lastSyncedCalories += Double(xp * kcalToXP)
+            let experiencePoints = Int(newCalories / Double(kcalToXP))
+            totalXPGained += experiencePoints
+            user.lastSyncedCalories += Double(experiencePoints * kcalToXP)
         }
-        
+
         // Water
         if newWater >= waterToXP {
-            let xp = Int(newWater / waterToXP) * 5
-            totalXPGained += xp
+            let experiencePoints = Int(newWater / waterToXP) * 5
+            totalXPGained += experiencePoints
             user.lastSyncedWater += Double(Int(newWater / waterToXP)) * waterToXP
             user.intelligence += 1 // hydration helps the brain!
         }
-        
+
         // Sleep
         if newSleep >= sleepToXP {
-            let xp = Int(newSleep / sleepToXP) * 10
-            totalXPGained += xp
+            let experiencePoints = Int(newSleep / sleepToXP) * 10
+            totalXPGained += experiencePoints
             user.lastSyncedSleep += Double(Int(newSleep / sleepToXP)) * sleepToXP
             user.vitality += 1 // sleep restores vitality
         }
-        
+
         if totalXPGained > 0 {
             addExperience(totalXPGained)
-            
+
             // Random physical boost
             if Int.random(in: 1...5) == 1 {
                 user.strength += 1
             }
-            
+
             uploadToCloud() // Auto-sync to cloud when XP is gained
         }
-        
+
         user.lastSyncDate = Date()
     }
-    
+
     private func saveUser() {
         if let encoded = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(encoded, forKey: "LifeXPUser")
@@ -156,7 +184,7 @@ class UserViewModel: ObservableObject {
             // but syncHealthData and completeHabit will trigger it.
         }
     }
-    
+
     private func loadUser() {
         if let data = UserDefaults.standard.data(forKey: "LifeXPUser"),
            let decoded = try? JSONDecoder().decode(LifeXPUser.self, from: data) {
@@ -183,9 +211,14 @@ class UserViewModel: ObservableObject {
             ]
         }
     }
-    
-    func addHabit(title: String, description: String, xp: Int) {
-        let newHabit = Habit(title: title, description: description, xpReward: xp, frequency: .daily)
+
+    func addHabit(title: String, description: String, experiencePoints: Int) {
+        let newHabit = Habit(
+            title: title,
+            description: description,
+            xpReward: experiencePoints,
+            frequency: .daily
+        )
         habits.append(newHabit)
         saveHabits()
         uploadToCloud()
@@ -196,7 +229,7 @@ class UserViewModel: ObservableObject {
         saveHabits()
         uploadToCloud()
     }
-    
+
     func completeHabit(_ habit: Habit) {
         if let index = habits.firstIndex(where: { $0.id == habit.id }) {
             habits[index].lastCompletedDate = Date()
@@ -207,13 +240,13 @@ class UserViewModel: ObservableObject {
             uploadToCloud()
         }
     }
-    
+
     func buyItem(_ item: Item) {
         guard user.gold >= item.price else { return }
-        
+
         user.gold -= item.price
         user.inventory.append(item)
-        
+
         // Apply stat boost immediately
         if let boost = item.statBoost {
             switch boost {
@@ -223,28 +256,28 @@ class UserViewModel: ObservableObject {
             case .charisma: user.charisma += item.boostAmount
             }
         }
-        
+
         saveUser()
         uploadToCloud()
     }
-    
+
     func addExperience(_ amount: Int) {
         user.experience += amount
-        
+
         // Level up logic
         while user.experience >= user.xpToNextLevel {
             user.experience -= user.xpToNextLevel
             user.level += 1
             lastLeveledUpTo = user.level
-            
+
             // Bonus stats on level up
             user.strength += 1
             user.intelligence += 1
             user.vitality += 1
-            
+
             // Bonus gold for reaching new heights
             user.gold += user.level * 20
-            
+
             // Trigger animation state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.showingLevelUp = true

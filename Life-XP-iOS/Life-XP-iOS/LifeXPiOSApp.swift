@@ -1,5 +1,5 @@
 //
-//  Life_XP_iOSApp.swift
+//  LifeXPiOSApp.swift
 //  Life-XP-iOS
 //
 //  Created by Brandon Lamer-Connolly on 1/10/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct Life_XP_iOSApp: App {
+struct LifeXPiOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

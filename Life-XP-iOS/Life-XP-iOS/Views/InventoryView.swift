@@ -3,7 +3,7 @@ import SwiftUI
 struct InventoryView: View {
     @ObservedObject var viewModel: UserViewModel
     @State private var showingShop = false
-    
+
     var body: some View {
         NavigationView {
             VStack {
@@ -22,7 +22,7 @@ struct InventoryView: View {
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 15).fill(Color(.systemBackground)).shadow(radius: 2))
                 .padding(.horizontal)
-                
+
                 // Inventory Grid
                 if viewModel.user.inventory.isEmpty {
                     VStack(spacing: 20) {
@@ -58,7 +58,7 @@ struct InventoryView: View {
 
 struct ItemCard: View {
     let item: Item
-    
+
     var body: some View {
         VStack(spacing: 10) {
             ZStack {
@@ -69,10 +69,10 @@ struct ItemCard: View {
                     .font(.title)
                     .foregroundColor(.blue)
             }
-            
+
             Text(item.name)
                 .font(.headline)
-            
+
             Text(item.description)
                 .font(.caption2)
                 .foregroundColor(.secondary)
@@ -87,7 +87,7 @@ struct ItemCard: View {
 struct ShopView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: UserViewModel
-    
+
     var body: some View {
         NavigationView {
             List(viewModel.shopItems) { item in
@@ -100,7 +100,7 @@ struct ShopView: View {
                             .font(.headline)
                             .foregroundColor(.blue)
                     }
-                    
+
                     VStack(alignment: .leading) {
                         Text(item.name)
                             .font(.headline)
@@ -108,12 +108,12 @@ struct ShopView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Spacer()
-                    
+
                     Button(action: {
                         viewModel.buyItem(item)
-                    }) {
+                    }, label: {
                         HStack {
                             Image(systemName: "banknote.fill")
                                 .font(.caption)
@@ -125,7 +125,7 @@ struct ShopView: View {
                         .background(viewModel.user.gold >= item.price ? Color.green : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                    }
+                    })
                     .disabled(viewModel.user.gold < item.price)
                 }
                 .padding(.vertical, 4)

@@ -1,5 +1,5 @@
 //
-//  Life_XP_iOSUITestsLaunchTests.swift
+//  LifeXPIOSUITestsLaunchTests.swift
 //  Life-XP-iOSUITests
 //
 //  Created by Brandon Lamer-Connolly on 1/10/26.
@@ -7,9 +7,9 @@
 
 import XCTest
 
-final class Life_XP_iOSUITestsLaunchTests: XCTestCase {
+final class LifeXPIOSUITestsLaunchTests: XCTestCase {
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
+    override static var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 

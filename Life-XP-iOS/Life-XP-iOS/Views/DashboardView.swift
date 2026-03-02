@@ -3,7 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @ObservedObject var viewModel: UserViewModel
     @ObservedObject var healthKitManager: HealthKitManager
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -16,16 +16,16 @@ struct DashboardView: View {
                             Text("👤")
                                 .font(.system(size: 40))
                         )
-                    
+
                     VStack(alignment: .leading, spacing: 5) {
                         Text(viewModel.user.name)
                             .font(.title)
                             .fontWeight(.bold)
-                        
+
                         Text("Level \(viewModel.user.level)")
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        
+
                         HStack {
                             Image(systemName: "banknote.fill")
                                 .foregroundColor(.green)
@@ -33,12 +33,12 @@ struct DashboardView: View {
                                 .font(.caption)
                                 .fontWeight(.bold)
                         }
-                        
+
                         // XP Bar
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: viewModel.user.xpProgress)
                                 .tint(.blue)
-                            
+
                             Text("\(viewModel.user.experience) / \(viewModel.user.xpToNextLevel) XP")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
@@ -48,7 +48,7 @@ struct DashboardView: View {
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 15).fill(Color(.systemBackground)).shadow(radius: 2))
                 .padding(.horizontal)
-                
+
                 // Stats Grid
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                     StatCard(title: "Strength", value: viewModel.user.strength, icon: "figure.walk", color: .red)
@@ -57,45 +57,61 @@ struct DashboardView: View {
                     StatCard(title: "Charisma", value: viewModel.user.charisma, icon: "star.fill", color: .yellow)
                 }
                 .padding(.horizontal)
-                
+
                 // Health Data
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text("Today's Health Data")
                             .font(.title2)
                             .fontWeight(.semibold)
-                        
+
                         Spacer()
-                        
+
                         Button(action: {
                             healthKitManager.fetchTodayHealthData()
                             viewModel.syncHealthData(
-                                steps: healthKitManager.stepCount, 
+                                steps: healthKitManager.stepCount,
                                 calories: healthKitManager.activeEnergy,
                                 sleep: healthKitManager.sleepHours,
                                 water: healthKitManager.waterIntake
                             )
-                        }) {
+                        }, label: {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .padding(8)
                                 .background(Color.blue.opacity(0.1))
                                 .clipShape(Circle())
-                        }
+                        })
                     }
                     .padding(.horizontal)
-                    
+
                     VStack(spacing: 15) {
                         HStack(spacing: 15) {
-                            HealthStatCard(title: "Steps", value: "\(healthKitManager.stepCount)", icon: "shoeprints.fill")
-                            HealthStatCard(title: "Active Burn", value: String(format: "%.0f kcal", healthKitManager.activeEnergy), icon: "flame.fill")
+                            HealthStatCard(
+                                title: "Steps",
+                                value: "\(healthKitManager.stepCount)",
+                                icon: "shoeprints.fill"
+                            )
+                            HealthStatCard(
+                                title: "Active Burn",
+                                value: String(format: "%.0f kcal", healthKitManager.activeEnergy),
+                                icon: "flame.fill"
+                            )
                         }
                         HStack(spacing: 15) {
-                            HealthStatCard(title: "Sleep", value: String(format: "%.1f hrs", healthKitManager.sleepHours), icon: "bed.double.fill")
-                            HealthStatCard(title: "Water", value: String(format: "%.2f L", healthKitManager.waterIntake), icon: "drop.fill")
+                            HealthStatCard(
+                                title: "Sleep",
+                                value: String(format: "%.1f hrs", healthKitManager.sleepHours),
+                                icon: "bed.double.fill"
+                            )
+                            HealthStatCard(
+                                title: "Water",
+                                value: String(format: "%.2f L", healthKitManager.waterIntake),
+                                icon: "drop.fill"
+                            )
                         }
                     }
                     .padding(.horizontal)
-                    
+
                     if let lastSync = viewModel.user.lastSyncDate {
                         Text("Last Synced: \(lastSync, style: .time)")
                             .font(.caption2)
@@ -103,7 +119,7 @@ struct DashboardView: View {
                             .padding(.horizontal)
                     }
                 }
-                
+
                 Spacer()
             }
             .padding(.top)
@@ -113,7 +129,7 @@ struct DashboardView: View {
             healthKitManager.fetchTodayHealthData()
             // Auto-sync if data is available
             viewModel.syncHealthData(
-                steps: healthKitManager.stepCount, 
+                steps: healthKitManager.stepCount,
                 calories: healthKitManager.activeEnergy,
                 sleep: healthKitManager.sleepHours,
                 water: healthKitManager.waterIntake
@@ -127,7 +143,7 @@ struct StatCard: View {
     let value: Int
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -155,7 +171,7 @@ struct HealthStatCard: View {
     let title: String
     let value: String
     let icon: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
