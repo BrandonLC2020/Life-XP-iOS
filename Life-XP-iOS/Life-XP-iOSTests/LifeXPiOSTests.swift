@@ -115,7 +115,7 @@ struct UserViewModelTests {
 
     /// Creates a UserViewModel with a clean, predictable baseline state.
     @MainActor private func makeVM() -> UserViewModel {
-        let vm = UserViewModel()
+        let vm = UserViewModel(skipCloudSync: true)
         vm.user = LifeXPUser()  // fresh user: level 1, 0 XP, 100 gold
         vm.habits = []
         return vm

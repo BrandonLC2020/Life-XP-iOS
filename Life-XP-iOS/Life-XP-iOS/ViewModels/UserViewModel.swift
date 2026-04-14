@@ -65,10 +65,12 @@ class UserViewModel: ObservableObject {
     private let waterToXP = 0.25 // 0.25L (1 cup) = 5 XP
     private let sleepToXP = 1.0  // 1 hour = 10 XP
 
-    init() {
+    init(skipCloudSync: Bool = false) {
         loadUser()
         loadHabits()
-        fetchFromCloud()
+        if !skipCloudSync {
+            fetchFromCloud()
+        }
     }
 
     func fetchFromCloud() {
