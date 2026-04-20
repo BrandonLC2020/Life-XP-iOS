@@ -24,6 +24,11 @@ struct ContentView: View {
                         Label("Habits", systemImage: "checkmark.circle.fill")
                     }
 
+                GoalsView(viewModel: userViewModel)
+                    .tabItem {
+                        Label("Goals", systemImage: "flag.fill")
+                    }
+
                 InventoryView(viewModel: userViewModel)
                     .tabItem {
                         Label("Inventory", systemImage: "shippingbox.fill")
@@ -45,7 +50,8 @@ struct ContentView: View {
         .onAppear {
             healthKitManager.requestAuthorization { success, _ in
                 if success {
-                    healthKitManager.fetchTodaySteps()
+                    healthKitManager.fetchTodayHealthData()
+                    userViewModel.refreshHealthKitGoals(using: healthKitManager)
                 }
             }
         }
