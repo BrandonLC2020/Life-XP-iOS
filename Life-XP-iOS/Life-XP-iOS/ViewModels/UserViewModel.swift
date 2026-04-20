@@ -327,6 +327,35 @@ class UserViewModel: ObservableObject {
         goals[index].photoData = photoData
     }
 
+    func refreshHealthKitGoals(using healthKitManager: HealthKitManager) {
+        let activeGoals = goals.filter {
+            !$0.isCompleted && ($0.trackingType == .steps || $0.trackingType == .calories)
+        }
+        for goal in activeGoals {
+            guard let index = goals.firstIndex(where: { $0.id == goal.id }) else { continue }
+            let start = goal.startDate
+            let end = Date()
+            switch goal.trackingType {
+            case .steps:
+                healthKitManager.fetchCumulativeSteps(from: start, to: end) { [weak self] total in
+                    guard let self else { return }
+                    self.goals[index].currentProgress = total
+                    self.checkMilestones(for: self.goals[index])
+                    self.uploadToCloud()
+                }
+            case .calories:
+                healthKitManager.fetchCumulativeCalories(from: start, to: end) { [weak self] total in
+                    guard let self else { return }
+                    self.goals[index].currentProgress = total
+                    self.checkMilestones(for: self.goals[index])
+                    self.uploadToCloud()
+                }
+            case .manual:
+                break
+            }
+        }
+    }
+
     private func checkMilestones(for goal: Goal) {
         guard let index = goals.firstIndex(where: { $0.id == goal.id }) else { return }
         let percent = goal.progressPercent

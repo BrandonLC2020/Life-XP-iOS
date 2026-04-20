@@ -115,6 +115,32 @@ class HealthKitManager: ObservableObject {
         healthStore.execute(query)
     }
 
+    func fetchCumulativeSteps(from startDate: Date, to endDate: Date, completion: @escaping (Double) -> Void) {
+        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            completion(0); return
+        }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate,
+                                      options: .cumulativeSum) { _, result, _ in
+            let value = result?.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
+            DispatchQueue.main.async { completion(value) }
+        }
+        healthStore.execute(query)
+    }
+
+    func fetchCumulativeCalories(from startDate: Date, to endDate: Date, completion: @escaping (Double) -> Void) {
+        guard let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else {
+            completion(0); return
+        }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let query = HKStatisticsQuery(quantityType: energyType, quantitySamplePredicate: predicate,
+                                      options: .cumulativeSum) { _, result, _ in
+            let value = result?.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
+            DispatchQueue.main.async { completion(value) }
+        }
+        healthStore.execute(query)
+    }
+
     func fetchTodaySleep() {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
 
