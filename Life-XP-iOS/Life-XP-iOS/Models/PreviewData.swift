@@ -31,11 +31,46 @@ extension Habit {
     ]
 }
 
+extension Goal {
+    static let previewGoals: [Goal] = {
+        var fitness = Goal(
+            title: "Run 100 Miles",
+            description: "Cumulative running goal for the year",
+            category: .fitness,
+            trackingType: .steps,
+            targetValue: 200_000
+        )
+        fitness.currentProgress = 87_500
+
+        var wellness = Goal(
+            title: "Sleep Better",
+            description: "Improve sleep consistency",
+            category: .wellness,
+            trackingType: .manual,
+            targetValue: 30
+        )
+        wellness.currentProgress = 22
+        wellness.awardedMilestones = [25, 50]
+
+        var learning = Goal(
+            title: "Read 12 Books",
+            description: "One book per month",
+            category: .learning,
+            trackingType: .manual,
+            targetValue: 12
+        )
+        learning.currentProgress = 3
+
+        return [fitness, wellness, learning]
+    }()
+}
+
 extension UserViewModel {
     static var preview: UserViewModel {
-        let previewVM = UserViewModel()
+        let previewVM = UserViewModel(skipCloudSync: true)
         previewVM.user = .preview
         previewVM.habits = Habit.previewHabits
+        previewVM.goals = Goal.previewGoals
         return previewVM
     }
 }
