@@ -114,6 +114,42 @@ struct DashboardView: View {
                     }
                 }
 
+                // Charisma Perks
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Image(systemName: "sparkles").foregroundColor(.yellow)
+                        Text("Charisma Perks")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.horizontal)
+
+                    VStack(spacing: 8) {
+                        CharismaPerkRow(
+                            icon: "banknote.fill",
+                            iconColor: .green,
+                            label: "Gold per Habit",
+                            value: "+\(viewModel.charismaGoldBonus) bonus"
+                        )
+                        CharismaPerkRow(
+                            icon: "person.2.fill",
+                            iconColor: .orange,
+                            label: "Social Habits",
+                            value: "Always +1 Charisma"
+                        )
+                        CharismaPerkRow(
+                            icon: "figure.walk",
+                            iconColor: .red,
+                            label: "Physical/Mental/Health",
+                            value: "1-in-3 stat boost"
+                        )
+                    }
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 15)
+                        .fill(Color(.systemBackground)).shadow(radius: 2))
+                    .padding(.horizontal)
+                }
+
                 Spacer()
             }
             .padding(.top)
@@ -149,6 +185,22 @@ struct DashboardView: View {
             Image(systemName: "icloud")
                 .foregroundColor(.secondary)
                 .font(.caption)
+        }
+    }
+}
+
+struct CharismaPerkRow: View {
+    let icon: String
+    let iconColor: Color
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon).foregroundColor(iconColor).frame(width: 20)
+            Text(label).font(.subheadline)
+            Spacer()
+            Text(value).font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
         }
     }
 }

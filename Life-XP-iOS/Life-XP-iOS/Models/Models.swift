@@ -67,6 +67,7 @@ struct Habit: Identifiable, Codable {
     var description: String
     var xpReward: Int
     var frequency: HabitFrequency
+    var category: HabitCategory = .physical
     var lastCompletedDate: Date?
     var isCompletedToday: Bool {
         guard let lastCompletedDate = lastCompletedDate else { return false }
@@ -76,6 +77,38 @@ struct Habit: Identifiable, Codable {
 
 enum HabitFrequency: String, Codable, CaseIterable {
     case daily, weekly, custom
+}
+
+enum HabitCategory: String, Codable, CaseIterable {
+    case physical, mental, social, health
+
+    var icon: String {
+        switch self {
+        case .physical: return "figure.walk"
+        case .mental:   return "brain"
+        case .social:   return "person.2.fill"
+        case .health:   return "heart.fill"
+        }
+    }
+
+    var displayName: String { rawValue.capitalized }
+
+    var statBoost: StatType {
+        switch self {
+        case .physical: return .strength
+        case .mental:   return .intelligence
+        case .social:   return .charisma
+        case .health:   return .vitality
+        }
+    }
+}
+
+struct PublicProfile: Identifiable, Codable {
+    var id: String
+    var displayName: String
+    var level: Int
+    var charisma: Int
+    var lastUpdated: Date
 }
 
 enum GoalCategory: String, Codable, CaseIterable {

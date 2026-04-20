@@ -19,15 +19,14 @@ extension LifeXPUser {
 
 extension Habit {
     static let previewHabits = [
-        Habit(title: "Hydrate", description: "Drink 2L of water", xpReward: 20, frequency: .daily),
-        Habit(
-            title: "Morning Sprint",
-            description: "Fast jog for 15m",
-            xpReward: 40,
-            frequency: .daily,
-            lastCompletedDate: Date()
-        ),
-        Habit(title: "Meditation", description: "10m mindfulness", xpReward: 15, frequency: .daily)
+        Habit(title: "Hydrate", description: "Drink 2L of water",
+              xpReward: 20, frequency: .daily, category: .health),
+        Habit(title: "Morning Sprint", description: "Fast jog for 15m",
+              xpReward: 40, frequency: .daily, category: .physical, lastCompletedDate: Date()),
+        Habit(title: "Meditation", description: "10m mindfulness",
+              xpReward: 15, frequency: .daily, category: .mental),
+        Habit(title: "Call a Friend", description: "Stay connected",
+              xpReward: 25, frequency: .daily, category: .social)
     ]
 }
 
@@ -65,12 +64,22 @@ extension Goal {
     }()
 }
 
+extension PublicProfile {
+    static let previewLeaderboard: [PublicProfile] = [
+        PublicProfile(id: "preview-1", displayName: "DragonSlayer99", level: 12, charisma: 28, lastUpdated: Date()),
+        PublicProfile(id: "preview-2", displayName: "Epic Adventurer", level: 5, charisma: 10, lastUpdated: Date()),
+        PublicProfile(id: "preview-3", displayName: "NightWatcher", level: 4, charisma: 14, lastUpdated: Date()),
+        PublicProfile(id: "preview-4", displayName: "SwiftCoder", level: 3, charisma: 11, lastUpdated: Date())
+    ]
+}
+
 extension UserViewModel {
     static var preview: UserViewModel {
         let previewVM = UserViewModel(skipCloudSync: true)
         previewVM.user = .preview
         previewVM.habits = Habit.previewHabits
         previewVM.goals = Goal.previewGoals
+        previewVM.leaderboard = PublicProfile.previewLeaderboard
         return previewVM
     }
 }

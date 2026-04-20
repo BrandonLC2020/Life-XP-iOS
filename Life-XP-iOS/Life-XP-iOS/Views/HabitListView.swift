@@ -1,5 +1,14 @@
 import SwiftUI
 
+private func categoryColor(_ category: HabitCategory) -> Color {
+    switch category {
+    case .physical: return .red
+    case .mental:   return .purple
+    case .social:   return .orange
+    case .health:   return .green
+    }
+}
+
 struct HabitListView: View {
     @ObservedObject var viewModel: UserViewModel
     @State private var showingAddHabit = false
@@ -40,9 +49,14 @@ struct HabitRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(habit.title)
-                    .font(.headline)
-                    .strikethrough(habit.isCompletedToday, color: .secondary)
+                HStack(spacing: 6) {
+                    Image(systemName: habit.category.icon)
+                        .foregroundColor(categoryColor(habit.category))
+                        .font(.system(size: 11))
+                    Text(habit.title)
+                        .font(.headline)
+                        .strikethrough(habit.isCompletedToday, color: .secondary)
+                }
                 Text(habit.description)
                     .font(.caption)
                     .foregroundColor(.secondary)

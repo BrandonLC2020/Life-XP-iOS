@@ -54,6 +54,10 @@ class UserViewModel: ObservableObject {
     @Published var isSyncing = false
     @Published var lastCloudSync: Date?
 
+    // Social / Leaderboard
+    @Published var leaderboard: [PublicProfile] = []
+    @Published var isLoadingLeaderboard = false
+
     private var activeSyncCount = 0 { didSet { isSyncing = activeSyncCount > 0 } }
     private var midnightObserver: NSObjectProtocol?
 
@@ -161,6 +165,8 @@ class UserViewModel: ObservableObject {
                 }
             }
         }
+
+        uploadPublicProfile()
     }
 
     func syncHealthData(steps: Int, calories: Double, sleep: Double, water: Double) {
@@ -256,22 +262,21 @@ class UserViewModel: ObservableObject {
            let decoded = try? JSONDecoder().decode([Habit].self, from: data) {
             habits = decoded
         } else {
-            // Default habits if none exist
             habits = [
-                Habit(title: "Drink Water", description: "Stay hydrated", xpReward: 10, frequency: .daily),
-                Habit(title: "Morning Run", description: "30-minute jog", xpReward: 50, frequency: .daily),
-                Habit(title: "Read for 30m", description: "Expand your mind", xpReward: 30, frequency: .daily)
+                Habit(title: "Drink Water", description: "Stay hydrated",
+                      xpReward: 10, frequency: .daily, category: .health),
+                Habit(title: "Morning Run", description: "30-minute jog",
+                      xpReward: 50, frequency: .daily, category: .physical),
+                Habit(title: "Read for 30m", description: "Expand your mind",
+                      xpReward: 30, frequency: .daily, category: .mental)
             ]
         }
     }
 
-    func addHabit(title: String, description: String, experiencePoints: Int) {
-        let newHabit = Habit(
-            title: title,
-            description: description,
-            xpReward: experiencePoints,
-            frequency: .daily
-        )
+    func addHabit(title: String, description: String, experiencePoints: Int,
+                  category: HabitCategory = .physical) {
+        let newHabit = Habit(title: title, description: description,
+                             xpReward: experiencePoints, frequency: .daily, category: category)
         habits.append(newHabit)
         saveHabits()
         uploadToCloud()
@@ -284,14 +289,18 @@ class UserViewModel: ObservableObject {
     }
 
     func completeHabit(_ habit: Habit) {
-        if let index = habits.firstIndex(where: { $0.id == habit.id }) {
-            habits[index].lastCompletedDate = Date()
-            addExperience(habit.xpReward)
-            // Reward some gold too!
-            user.gold += habit.xpReward / 2
-            saveHabits()
-            uploadToCloud()
+        guard let index = habits.firstIndex(where: { $0.id == habit.id }) else { return }
+        habits[index].lastCompletedDate = Date()
+        addExperience(habit.xpReward)
+        user.gold += habit.xpReward / 2 + user.charisma / 10
+        switch habit.category {
+        case .physical: if Int.random(in: 1...3) == 1 { user.strength += 1 }
+        case .mental:   if Int.random(in: 1...3) == 1 { user.intelligence += 1 }
+        case .health:   if Int.random(in: 1...3) == 1 { user.vitality += 1 }
+        case .social:   user.charisma += 1
         }
+        saveHabits()
+        uploadToCloud()
     }
 
     func buyItem(_ item: Item) {

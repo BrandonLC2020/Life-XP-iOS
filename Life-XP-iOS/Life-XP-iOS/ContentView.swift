@@ -29,6 +29,11 @@ struct ContentView: View {
                         Label("Goals", systemImage: "flag.fill")
                     }
 
+                SocialView(viewModel: userViewModel)
+                    .tabItem {
+                        Label("Social", systemImage: "person.2.fill")
+                    }
+
                 InventoryView(viewModel: userViewModel)
                     .tabItem {
                         Label("Inventory", systemImage: "shippingbox.fill")

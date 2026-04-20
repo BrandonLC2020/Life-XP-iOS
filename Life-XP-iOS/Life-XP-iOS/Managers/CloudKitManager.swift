@@ -95,6 +95,7 @@ class CloudKitManager {
                     record["description"] = habit.description as CKRecordValue
                     record["xpReward"] = habit.xpReward as CKRecordValue
                     record["frequency"] = habit.frequency.rawValue as CKRecordValue
+                    record["category"] = habit.category.rawValue as CKRecordValue
                     if let lastDate = habit.lastCompletedDate {
                         record["lastCompletedDate"] = lastDate as CKRecordValue
                     }
@@ -131,10 +132,51 @@ class CloudKitManager {
 
                 var habit = Habit(title: title, description: description, xpReward: xpReward, frequency: frequency)
                 habit.lastCompletedDate = record["lastCompletedDate"] as? Date
+                if let categoryString = record["category"] as? String,
+                   let category = HabitCategory(rawValue: categoryString) {
+                    habit.category = category
+                }
                 return habit
             } ?? []
 
             completion(.success(habits))
+        }
+    }
+}
+
+// MARK: - Public Leaderboard
+
+extension CloudKitManager {
+    private var publicDatabase: CKDatabase { container.publicCloudDatabase }
+    private var publicProfileRecordType: String { "PublicProfile" }
+
+    func savePublicProfile(recordName: String, name: String, level: Int, charisma: Int,
+                           completion: @escaping (Error?) -> Void) {
+        let recordID = CKRecord.ID(recordName: recordName)
+        publicDatabase.fetch(withRecordID: recordID) { record, _ in
+            let profileRecord = record ?? CKRecord(recordType: self.publicProfileRecordType, recordID: recordID)
+            profileRecord["displayName"] = name as CKRecordValue
+            profileRecord["level"] = level as CKRecordValue
+            profileRecord["charisma"] = charisma as CKRecordValue
+            profileRecord["lastUpdated"] = Date() as CKRecordValue
+            self.publicDatabase.save(profileRecord) { _, error in completion(error) }
+        }
+    }
+
+    func fetchLeaderboard(limit: Int = 20, completion: @escaping (Result<[PublicProfile], Error>) -> Void) {
+        let query = CKQuery(recordType: publicProfileRecordType, predicate: NSPredicate(value: true))
+        query.sortDescriptors = [NSSortDescriptor(key: "level", ascending: false)]
+        publicDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let error = error { completion(.failure(error)); return }
+            let profiles = (records ?? []).prefix(limit).compactMap { record -> PublicProfile? in
+                guard let name = record["displayName"] as? String,
+                      let level = record["level"] as? Int,
+                      let charisma = record["charisma"] as? Int,
+                      let lastUpdated = record["lastUpdated"] as? Date else { return nil }
+                return PublicProfile(id: record.recordID.recordName, displayName: name,
+                                    level: level, charisma: charisma, lastUpdated: lastUpdated)
+            }
+            completion(.success(Array(profiles)))
         }
     }
 }

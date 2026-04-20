@@ -7,6 +7,7 @@ struct AddHabitView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var xpReward = 10
+    @State private var category: HabitCategory = .physical
 
     var body: some View {
         NavigationView {
@@ -16,6 +17,18 @@ struct AddHabitView: View {
                     TextField("Description", text: $description)
                 }
 
+                Section(header: Text("Category")) {
+                    Picker("Category", selection: $category) {
+                        ForEach(HabitCategory.allCases, id: \.self) { cat in
+                            Label(cat.displayName, systemImage: cat.icon).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text("Rewards +1 \(category.statBoost.rawValue.capitalized) on completion")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section(header: Text("Reward")) {
                     Stepper("\(xpReward) XP", value: $xpReward, in: 5...100, step: 5)
                 }
@@ -23,17 +36,12 @@ struct AddHabitView: View {
             .navigationTitle("New Habit")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        viewModel.addHabit(
-                            title: title,
-                            description: description,
-                            experiencePoints: xpReward
-                        )
+                        viewModel.addHabit(title: title, description: description,
+                                          experiencePoints: xpReward, category: category)
                         dismiss()
                     }
                     .disabled(title.isEmpty)
