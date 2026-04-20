@@ -77,3 +77,70 @@ struct Habit: Identifiable, Codable {
 enum HabitFrequency: String, Codable, CaseIterable {
     case daily, weekly, custom
 }
+
+enum GoalCategory: String, Codable, CaseIterable {
+    case fitness
+    case wellness
+    case learning
+    case financial
+    case social
+
+    var icon: String {
+        switch self {
+        case .fitness:   return "figure.run"
+        case .wellness:  return "heart.fill"
+        case .learning:  return "book.fill"
+        case .financial: return "banknote.fill"
+        case .social:    return "person.2.fill"
+        }
+    }
+
+    var displayName: String { rawValue.capitalized }
+}
+
+enum GoalTrackingType: String, Codable, CaseIterable {
+    case manual
+    case steps
+    case calories
+
+    var displayName: String {
+        switch self {
+        case .manual:   return "Manual"
+        case .steps:    return "Steps (HealthKit)"
+        case .calories: return "Calories (HealthKit)"
+        }
+    }
+
+    var unit: String {
+        switch self {
+        case .manual:   return ""
+        case .steps:    return "steps"
+        case .calories: return "kcal"
+        }
+    }
+}
+
+struct Goal: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var description: String
+    var category: GoalCategory
+    var trackingType: GoalTrackingType
+    var targetValue: Double
+    var currentProgress: Double = 0.0
+    var startDate: Date = Date()
+    var targetDate: Date?
+    var notes: String?
+    var photoData: Data?
+    var isCompleted: Bool = false
+    var awardedMilestones: Set<Int> = []
+
+    var progressFraction: Double {
+        guard targetValue > 0 else { return 0 }
+        return min(currentProgress / targetValue, 1.0)
+    }
+
+    var progressPercent: Int {
+        Int(progressFraction * 100)
+    }
+}
