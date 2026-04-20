@@ -485,3 +485,155 @@ struct GoalCRUDTests {
         #expect(vm.goals[0].currentProgress == 0)
     }
 }
+
+// MARK: - Milestone Reward Tests
+
+@Suite("Milestone Rewards")
+struct MilestoneTests {
+
+    init() {
+        UserDefaults.standard.removeObject(forKey: "LifeXPUser")
+        UserDefaults.standard.removeObject(forKey: "LifeXPHabits")
+        UserDefaults.standard.removeObject(forKey: "LifeXPGoals")
+    }
+
+    @MainActor private func makeVM() -> UserViewModel {
+        let vm = UserViewModel(skipCloudSync: true)
+        vm.user = LifeXPUser()
+        vm.habits = []
+        vm.goals = []
+        return vm
+    }
+
+    private func makeGoal(category: GoalCategory = .fitness, targetValue: Double = 100) -> Goal {
+        Goal(title: "Test Goal", description: "desc", category: category,
+             trackingType: .manual, targetValue: targetValue)
+    }
+
+    @Test @MainActor func milestone25_awardsCorrectXPAndGold() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        let baseXP = vm.user.experience
+        let baseGold = vm.user.gold
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.user.experience == baseXP + 25)
+        #expect(vm.user.gold == baseGold + 10)
+    }
+
+    @Test @MainActor func milestone50_awardsCorrectXPAndGold() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        let baseXP = vm.user.experience
+        let baseGold = vm.user.gold
+        vm.updateManualProgress(goalId: goal.id, newValue: 50)
+        // 25% and 50% both fire: 25+50=75 XP, 10+25=35 gold
+        #expect(vm.user.experience == baseXP + 75)
+        #expect(vm.user.gold == baseGold + 35)
+    }
+
+    @Test @MainActor func milestone100_awardsCorrectXPAndGold() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        let baseXP = vm.user.experience
+        let baseGold = vm.user.gold
+        // All four milestones fire: 25+50+100+200=375 XP, 10+25+50+100=185 gold
+        vm.updateManualProgress(goalId: goal.id, newValue: 100)
+        #expect(vm.user.experience == baseXP + 375)
+        #expect(vm.user.gold == baseGold + 185)
+    }
+
+    @Test @MainActor func milestone25_doesNotDoubleAward() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        let xpAfterFirst = vm.user.experience
+        let goldAfterFirst = vm.user.gold
+        vm.updateManualProgress(goalId: goal.id, newValue: 30)
+        #expect(vm.user.experience == xpAfterFirst)
+        #expect(vm.user.gold == goldAfterFirst)
+    }
+
+    @Test @MainActor func milestone_fitnessGoal_boostsStrength() {
+        let vm = makeVM()
+        let goal = makeGoal(category: .fitness, targetValue: 100)
+        vm.addGoal(goal)
+        let base = vm.user.strength
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.user.strength == base + 1)
+    }
+
+    @Test @MainActor func milestone_wellnessGoal_boostsVitality() {
+        let vm = makeVM()
+        let goal = makeGoal(category: .wellness, targetValue: 100)
+        vm.addGoal(goal)
+        let base = vm.user.vitality
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.user.vitality == base + 1)
+    }
+
+    @Test @MainActor func milestone_learningGoal_boostsIntelligence() {
+        let vm = makeVM()
+        let goal = makeGoal(category: .learning, targetValue: 100)
+        vm.addGoal(goal)
+        let base = vm.user.intelligence
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.user.intelligence == base + 1)
+    }
+
+    @Test @MainActor func milestone_socialGoal_boostsCharisma() {
+        let vm = makeVM()
+        let goal = makeGoal(category: .social, targetValue: 100)
+        vm.addGoal(goal)
+        let base = vm.user.charisma
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.user.charisma == base + 1)
+    }
+
+    @Test @MainActor func milestone_financialGoal_boostsIntelligenceAndCharisma() {
+        let vm = makeVM()
+        let goal = makeGoal(category: .financial, targetValue: 100)
+        vm.addGoal(goal)
+        let baseInt = vm.user.intelligence
+        let baseCha = vm.user.charisma
+        // 25% boost=1: int += 1, cha += 0; 50% boost=2: int += 1, cha += 1 → total int+2, cha+1
+        vm.updateManualProgress(goalId: goal.id, newValue: 50)
+        #expect(vm.user.intelligence == baseInt + 2)
+        #expect(vm.user.charisma == baseCha + 1)
+    }
+
+    @Test @MainActor func milestone100_addsTrophyToInventory() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        vm.updateManualProgress(goalId: goal.id, newValue: 100)
+        #expect(vm.user.inventory.contains(where: { $0.icon == "trophy.fill" }))
+    }
+
+    @Test @MainActor func milestone100_markGoalAsCompleted() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        vm.updateManualProgress(goalId: goal.id, newValue: 100)
+        #expect(vm.goals[0].isCompleted == true)
+    }
+
+    @Test @MainActor func milestone_setsShowingMilestoneReward() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.showingMilestoneReward == true)
+    }
+
+    @Test @MainActor func milestone_setsLastMilestoneMessage() {
+        let vm = makeVM()
+        let goal = makeGoal(targetValue: 100)
+        vm.addGoal(goal)
+        vm.updateManualProgress(goalId: goal.id, newValue: 25)
+        #expect(vm.lastMilestoneMessage.contains("25%"))
+    }
+}
