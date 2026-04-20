@@ -138,3 +138,14 @@ class CloudKitManager {
         }
     }
 }
+
+// MARK: - Goal Sync (stubs — full implementation in Task 7)
+extension CloudKitManager {
+    func saveGoals(_ goals: [Goal], completion: @escaping (Error?) -> Void) {
+        completion(nil)
+    }
+
+    func fetchGoals(completion: @escaping (Result<[Goal], Error>) -> Void) {
+        completion(.success([]))
+    }
+}

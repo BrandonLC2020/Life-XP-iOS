@@ -15,6 +15,15 @@ class UserViewModel: ObservableObject {
         }
     }
 
+    @Published var goals: [Goal] = [] {
+        didSet {
+            saveGoals()
+        }
+    }
+
+    @Published var showingMilestoneReward = false
+    @Published var lastMilestoneMessage = ""
+
     // Level Up State
     @Published var showingLevelUp = false
     @Published var lastLeveledUpTo = 0
@@ -68,6 +77,7 @@ class UserViewModel: ObservableObject {
     init(skipCloudSync: Bool = false) {
         loadUser()
         loadHabits()
+        loadGoals()
         if !skipCloudSync {
             fetchFromCloud()
         }
@@ -105,6 +115,19 @@ class UserViewModel: ObservableObject {
                 }
             }
         }
+
+        CloudKitManager.shared.fetchGoals { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let cloudGoals):
+                    if !cloudGoals.isEmpty {
+                        self?.goals = cloudGoals
+                    }
+                case .failure(let error):
+                    print("CloudKit Goals Fetch Error: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     func uploadToCloud() {
@@ -121,6 +144,12 @@ class UserViewModel: ObservableObject {
         CloudKitManager.shared.saveHabits(habits) { error in
             if let error = error {
                 print("CloudKit Habits Upload Error: \(error.localizedDescription)")
+            }
+        }
+
+        CloudKitManager.shared.saveGoals(goals) { error in
+            if let error = error {
+                print("CloudKit Goals Upload Error: \(error.localizedDescription)")
             }
         }
     }
@@ -200,6 +229,19 @@ class UserViewModel: ObservableObject {
         }
     }
 
+    private func saveGoals() {
+        if let encoded = try? JSONEncoder().encode(goals) {
+            UserDefaults.standard.set(encoded, forKey: "LifeXPGoals")
+        }
+    }
+
+    private func loadGoals() {
+        if let data = UserDefaults.standard.data(forKey: "LifeXPGoals"),
+           let decoded = try? JSONDecoder().decode([Goal].self, from: data) {
+            goals = decoded
+        }
+    }
+
     private func loadHabits() {
         if let data = UserDefaults.standard.data(forKey: "LifeXPHabits"),
            let decoded = try? JSONDecoder().decode([Habit].self, from: data) {
@@ -261,6 +303,32 @@ class UserViewModel: ObservableObject {
 
         saveUser()
         uploadToCloud()
+    }
+
+    func addGoal(_ goal: Goal) {
+        goals.append(goal)
+        uploadToCloud()
+    }
+
+    func deleteGoal(at offsets: IndexSet) {
+        goals.remove(atOffsets: offsets)
+        uploadToCloud()
+    }
+
+    func updateManualProgress(goalId: UUID, newValue: Double) {
+        guard let index = goals.firstIndex(where: { $0.id == goalId }) else { return }
+        goals[index].currentProgress = newValue
+        checkMilestones(for: goals[index])
+        uploadToCloud()
+    }
+
+    func updateGoalPhoto(goalId: UUID, photoData: Data?) {
+        guard let index = goals.firstIndex(where: { $0.id == goalId }) else { return }
+        goals[index].photoData = photoData
+    }
+
+    private func checkMilestones(for goal: Goal) {
+        // Full implementation added in Task 5
     }
 
     func addExperience(_ amount: Int) {
