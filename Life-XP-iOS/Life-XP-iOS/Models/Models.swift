@@ -121,7 +121,7 @@ enum GoalTrackingType: String, Codable, CaseIterable {
 }
 
 struct Goal: Identifiable, Codable {
-    var id: UUID = UUID()
+    var id = UUID()
     var title: String
     var description: String
     var category: GoalCategory
