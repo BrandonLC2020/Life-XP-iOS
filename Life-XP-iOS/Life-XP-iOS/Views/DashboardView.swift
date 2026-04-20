@@ -67,15 +67,9 @@ struct DashboardView: View {
 
                         Spacer()
 
-                        Button(action: {
-                            healthKitManager.fetchTodayHealthData()
-                            viewModel.syncHealthData(
-                                steps: healthKitManager.stepCount,
-                                calories: healthKitManager.activeEnergy,
-                                sleep: healthKitManager.sleepHours,
-                                water: healthKitManager.waterIntake
-                            )
-                        }, label: {
+                        syncStatusIndicator
+
+                        Button(action: fetchAndSync, label: {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .padding(8)
                                 .background(Color.blue.opacity(0.1))
@@ -126,14 +120,35 @@ struct DashboardView: View {
         }
         .background(Color(.systemGroupedBackground))
         .onAppear {
-            healthKitManager.fetchTodayHealthData()
-            // Auto-sync if data is available
+            guard !viewModel.isSyncing else { return }
+            fetchAndSync()
+        }
+    }
+
+    private func fetchAndSync() {
+        healthKitManager.fetchTodayHealthData {
             viewModel.syncHealthData(
                 steps: healthKitManager.stepCount,
                 calories: healthKitManager.activeEnergy,
                 sleep: healthKitManager.sleepHours,
                 water: healthKitManager.waterIntake
             )
+        }
+    }
+
+    @ViewBuilder
+    private var syncStatusIndicator: some View {
+        if viewModel.isSyncing {
+            ProgressView()
+                .scaleEffect(0.8)
+        } else if viewModel.lastCloudSync != nil {
+            Image(systemName: "checkmark.icloud.fill")
+                .foregroundColor(.green)
+                .font(.caption)
+        } else {
+            Image(systemName: "icloud")
+                .foregroundColor(.secondary)
+                .font(.caption)
         }
     }
 }

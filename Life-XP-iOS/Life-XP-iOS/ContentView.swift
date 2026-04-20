@@ -83,10 +83,11 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
 
-                    Button("Sync with CloudKit") {
+                    Button("Sync Now") {
                         viewModel.fetchFromCloud()
                         viewModel.uploadToCloud()
                     }
+                    .disabled(viewModel.isSyncing)
                 }
 
                 Section(header: Text("HealthKit Permissions")) {

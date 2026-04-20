@@ -3,23 +3,9 @@ import Combine
 import SwiftUI
 
 class UserViewModel: ObservableObject {
-    @Published var user: LifeXPUser = LifeXPUser() {
-        didSet {
-            saveUser()
-        }
-    }
-
-    @Published var habits: [Habit] = [] {
-        didSet {
-            saveHabits()
-        }
-    }
-
-    @Published var goals: [Goal] = [] {
-        didSet {
-            saveGoals()
-        }
-    }
+    @Published var user: LifeXPUser = LifeXPUser() { didSet { saveUser() } }
+    @Published var habits: [Habit] = [] { didSet { saveHabits() } }
+    @Published var goals: [Goal] = [] { didSet { saveGoals() } }
 
     @Published var showingMilestoneReward = false
     @Published var lastMilestoneMessage = ""
@@ -68,6 +54,9 @@ class UserViewModel: ObservableObject {
     @Published var isSyncing = false
     @Published var lastCloudSync: Date?
 
+    private var activeSyncCount = 0 { didSet { isSyncing = activeSyncCount > 0 } }
+    private var midnightObserver: NSObjectProtocol?
+
     // Conversion Factors
     private let stepsToXP = 100 // 100 steps = 1 XP
     private let kcalToXP = 10   // 10 kcal = 1 XP
@@ -81,14 +70,22 @@ class UserViewModel: ObservableObject {
         if !skipCloudSync {
             fetchFromCloud()
         }
+        midnightObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.significantTimeChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.user.checkNewDay()
+        }
     }
 
-    func fetchFromCloud() {
-        isSyncing = true
+    deinit { midnightObserver.map { NotificationCenter.default.removeObserver($0) } }
 
+    func fetchFromCloud() {
+        activeSyncCount += 1
         CloudKitManager.shared.fetchUserStats { [weak self] result in
             DispatchQueue.main.async {
-                self?.isSyncing = false
+                self?.activeSyncCount -= 1
                 switch result {
                 case .success(let cloudUser):
                     // Simple merge: take the one with more total XP/level
@@ -103,8 +100,10 @@ class UserViewModel: ObservableObject {
             }
         }
 
+        activeSyncCount += 1
         CloudKitManager.shared.fetchHabits { [weak self] result in
             DispatchQueue.main.async {
+                self?.activeSyncCount -= 1
                 switch result {
                 case .success(let cloudHabits):
                     if !cloudHabits.isEmpty {
@@ -116,8 +115,10 @@ class UserViewModel: ObservableObject {
             }
         }
 
+        activeSyncCount += 1
         CloudKitManager.shared.fetchGoals { [weak self] result in
             DispatchQueue.main.async {
+                self?.activeSyncCount -= 1
                 switch result {
                 case .success(let cloudGoals):
                     if !cloudGoals.isEmpty {
@@ -131,25 +132,33 @@ class UserViewModel: ObservableObject {
     }
 
     func uploadToCloud() {
-        isSyncing = true
+        activeSyncCount += 1
         CloudKitManager.shared.saveUserStats(user) { [weak self] result in
             DispatchQueue.main.async {
-                self?.isSyncing = false
+                self?.activeSyncCount -= 1
                 if case .success = result {
                     self?.lastCloudSync = Date()
                 }
             }
         }
 
-        CloudKitManager.shared.saveHabits(habits) { error in
-            if let error = error {
-                print("CloudKit Habits Upload Error: \(error.localizedDescription)")
+        activeSyncCount += 1
+        CloudKitManager.shared.saveHabits(habits) { [weak self] error in
+            DispatchQueue.main.async {
+                self?.activeSyncCount -= 1
+                if let error = error {
+                    print("CloudKit Habits Upload Error: \(error.localizedDescription)")
+                }
             }
         }
 
-        CloudKitManager.shared.saveGoals(goals) { error in
-            if let error = error {
-                print("CloudKit Goals Upload Error: \(error.localizedDescription)")
+        activeSyncCount += 1
+        CloudKitManager.shared.saveGoals(goals) { [weak self] error in
+            DispatchQueue.main.async {
+                self?.activeSyncCount -= 1
+                if let error = error {
+                    print("CloudKit Goals Upload Error: \(error.localizedDescription)")
+                }
             }
         }
     }

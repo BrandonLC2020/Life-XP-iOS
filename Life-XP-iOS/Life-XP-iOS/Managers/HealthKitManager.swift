@@ -39,15 +39,23 @@ class HealthKitManager: ObservableObject {
         }
     }
 
-    func fetchTodayHealthData() {
-        fetchTodaySteps()
-        fetchTodayActiveEnergy()
-        fetchTodaySleep()
-        fetchTodayWater()
+    func fetchTodayHealthData(completion: (() -> Void)? = nil) {
+        let group = DispatchGroup()
+        fetchTodaySteps(group: group)
+        fetchTodayActiveEnergy(group: group)
+        fetchTodaySleep(group: group)
+        fetchTodayWater(group: group)
+        if let completion = completion {
+            group.notify(queue: .main, execute: completion)
+        }
     }
 
-    func fetchTodaySteps() {
-        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else { return }
+    private func fetchTodaySteps(group: DispatchGroup? = nil) {
+        group?.enter()
+        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            group?.leave()
+            return
+        }
 
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
@@ -58,20 +66,23 @@ class HealthKitManager: ObservableObject {
             quantitySamplePredicate: predicate,
             options: .cumulativeSum
         ) { _, result, _ in
-            guard let result = result, let sum = result.sumQuantity() else {
-                return
-            }
-
             DispatchQueue.main.async {
-                self.stepCount = Int(sum.doubleValue(for: HKUnit.count()))
+                if let sum = result?.sumQuantity() {
+                    self.stepCount = Int(sum.doubleValue(for: HKUnit.count()))
+                }
+                group?.leave()
             }
         }
 
         healthStore.execute(query)
     }
 
-    func fetchTodayActiveEnergy() {
-        guard let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
+    private func fetchTodayActiveEnergy(group: DispatchGroup? = nil) {
+        group?.enter()
+        guard let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else {
+            group?.leave()
+            return
+        }
 
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
@@ -82,20 +93,23 @@ class HealthKitManager: ObservableObject {
             quantitySamplePredicate: predicate,
             options: .cumulativeSum
         ) { _, result, _ in
-            guard let result = result, let sum = result.sumQuantity() else {
-                return
-            }
-
             DispatchQueue.main.async {
-                self.activeEnergy = sum.doubleValue(for: HKUnit.kilocalorie())
+                if let sum = result?.sumQuantity() {
+                    self.activeEnergy = sum.doubleValue(for: HKUnit.kilocalorie())
+                }
+                group?.leave()
             }
         }
 
         healthStore.execute(query)
     }
 
-    func fetchTodayWater() {
-        guard let waterType = HKQuantityType.quantityType(forIdentifier: .dietaryWater) else { return }
+    private func fetchTodayWater(group: DispatchGroup? = nil) {
+        group?.enter()
+        guard let waterType = HKQuantityType.quantityType(forIdentifier: .dietaryWater) else {
+            group?.leave()
+            return
+        }
 
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
@@ -106,10 +120,11 @@ class HealthKitManager: ObservableObject {
             quantitySamplePredicate: predicate,
             options: .cumulativeSum
         ) { _, result, _ in
-            guard let result = result, let sum = result.sumQuantity() else { return }
-
             DispatchQueue.main.async {
-                self.waterIntake = sum.doubleValue(for: HKUnit.liter())
+                if let sum = result?.sumQuantity() {
+                    self.waterIntake = sum.doubleValue(for: HKUnit.liter())
+                }
+                group?.leave()
             }
         }
         healthStore.execute(query)
@@ -141,12 +156,18 @@ class HealthKitManager: ObservableObject {
         healthStore.execute(query)
     }
 
-    func fetchTodaySleep() {
-        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
+    private func fetchTodaySleep(group: DispatchGroup? = nil) {
+        group?.enter()
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            group?.leave()
+            return
+        }
 
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
+        // Look back to yesterday 6 PM so overnight sleep starting before midnight is included
+        let sleepWindowStart = Calendar.current.date(byAdding: .hour, value: -6, to: startOfDay) ?? startOfDay
+        let predicate = HKQuery.predicateForSamples(withStart: sleepWindowStart, end: now, options: .strictStartDate)
 
         let query = HKSampleQuery(
             sampleType: sleepType,
@@ -154,7 +175,10 @@ class HealthKitManager: ObservableObject {
             limit: HKObjectQueryNoLimit,
             sortDescriptors: nil
         ) { _, samples, _ in
-            guard let samples = samples as? [HKCategorySample] else { return }
+            guard let samples = samples as? [HKCategorySample] else {
+                DispatchQueue.main.async { group?.leave() }
+                return
+            }
 
             let totalSleepSeconds = samples.reduce(0.0) { result, sample in
                 if sample.value == HKCategoryValueSleepAnalysis.asleep.rawValue ||
@@ -168,6 +192,7 @@ class HealthKitManager: ObservableObject {
 
             DispatchQueue.main.async {
                 self.sleepHours = totalSleepSeconds / 3600.0
+                group?.leave()
             }
         }
         healthStore.execute(query)
