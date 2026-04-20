@@ -104,8 +104,11 @@ Fetches all `"Goal"` records and reconstructs `[Goal]`. `awardedMilestones` is d
 ### New published state
 ```swift
 @Published var goals: [Goal] = []
-@Published var pendingMilestoneReward: MilestoneReward?  // drives reward overlay
+@Published var showingMilestoneReward = false
+@Published var lastMilestoneMessage = ""  // e.g. "Goal 50% complete! +50 XP, +25 Gold"
 ```
+
+Milestone notifications reuse the same alert/overlay trigger pattern as `showingLevelUp` — a boolean flag set in `awardMilestone` drives a `.alert` in `GoalsView`.
 
 ### New public methods
 | Method | Purpose |

@@ -21,7 +21,7 @@ if which swiftlint >/dev/null; then
   # Only lint staged Swift files
   SWIFT_FILES=$(echo "$STAGED_FILES" | grep ".swift")
   if [ ! -z "$SWIFT_FILES" ]; then
-    swiftlint lint --strict --quiet
+    echo "$SWIFT_FILES" | xargs swiftlint lint --strict --quiet
     if [ $? -ne 0 ]; then
       echo "SwiftLint failed. Please fix violations before committing."
       exit 1
