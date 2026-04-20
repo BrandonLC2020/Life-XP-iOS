@@ -111,6 +111,7 @@ struct UserViewModelTests {
     init() {
         UserDefaults.standard.removeObject(forKey: "LifeXPUser")
         UserDefaults.standard.removeObject(forKey: "LifeXPHabits")
+        UserDefaults.standard.removeObject(forKey: "LifeXPGoals")
     }
 
     /// Creates a UserViewModel with a clean, predictable baseline state.
