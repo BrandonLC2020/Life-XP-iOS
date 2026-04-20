@@ -139,13 +139,87 @@ class CloudKitManager {
     }
 }
 
-// MARK: - Goal Sync (stubs — full implementation in Task 7)
+// MARK: - Goal Sync
+
 extension CloudKitManager {
+    private var goalRecordType: String { "Goal" }
+
     func saveGoals(_ goals: [Goal], completion: @escaping (Error?) -> Void) {
-        completion(nil)
+        let query = CKQuery(recordType: goalRecordType, predicate: NSPredicate(value: true))
+
+        privateDatabase.perform(query, inZoneWith: nil) { records, _ in
+            let deleteIDs = records?.map { $0.recordID } ?? []
+            let deleteOperation = CKModifyRecordsOperation(recordsToSave: nil, recordIDsToDelete: deleteIDs)
+
+            deleteOperation.modifyRecordsCompletionBlock = { _, _, deleteError in
+                if let deleteError = deleteError { completion(deleteError); return }
+
+                let recordsToSave: [CKRecord] = goals.map { goal in
+                    let record = CKRecord(recordType: self.goalRecordType)
+                    record["goalId"] = goal.id.uuidString as CKRecordValue
+                    record["title"] = goal.title as CKRecordValue
+                    record["goalDescription"] = goal.description as CKRecordValue
+                    record["category"] = goal.category.rawValue as CKRecordValue
+                    record["trackingType"] = goal.trackingType.rawValue as CKRecordValue
+                    record["targetValue"] = goal.targetValue as CKRecordValue
+                    record["currentProgress"] = goal.currentProgress as CKRecordValue
+                    record["startDate"] = goal.startDate as CKRecordValue
+                    record["isCompleted"] = (goal.isCompleted ? 1 : 0) as CKRecordValue
+                    if let targetDate = goal.targetDate { record["targetDate"] = targetDate as CKRecordValue }
+                    if let notes = goal.notes { record["notes"] = notes as CKRecordValue }
+                    if let data = try? JSONEncoder().encode(Array(goal.awardedMilestones)),
+                       let jsonString = String(data: data, encoding: .utf8) {
+                        record["awardedMilestones"] = jsonString as CKRecordValue
+                    }
+                    return record
+                }
+
+                let saveOperation = CKModifyRecordsOperation(recordsToSave: recordsToSave, recordIDsToDelete: nil)
+                saveOperation.modifyRecordsCompletionBlock = { _, _, saveError in completion(saveError) }
+                self.privateDatabase.add(saveOperation)
+            }
+            self.privateDatabase.add(deleteOperation)
+        }
     }
 
     func fetchGoals(completion: @escaping (Result<[Goal], Error>) -> Void) {
-        completion(.success([]))
+        let query = CKQuery(recordType: goalRecordType, predicate: NSPredicate(value: true))
+
+        privateDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let error = error { completion(.failure(error)); return }
+
+            let goals: [Goal] = records?.compactMap { record in
+                guard
+                    let idString = record["goalId"] as? String,
+                    let id = UUID(uuidString: idString),
+                    let title = record["title"] as? String,
+                    let description = record["goalDescription"] as? String,
+                    let categoryString = record["category"] as? String,
+                    let category = GoalCategory(rawValue: categoryString),
+                    let trackingTypeString = record["trackingType"] as? String,
+                    let trackingType = GoalTrackingType(rawValue: trackingTypeString),
+                    let targetValue = record["targetValue"] as? Double,
+                    let currentProgress = record["currentProgress"] as? Double,
+                    let startDate = record["startDate"] as? Date
+                else { return nil }
+
+                var goal = Goal(title: title, description: description, category: category,
+                                trackingType: trackingType, targetValue: targetValue)
+                goal.id = id
+                goal.currentProgress = currentProgress
+                goal.startDate = startDate
+                goal.targetDate = record["targetDate"] as? Date
+                goal.notes = record["notes"] as? String
+                goal.isCompleted = (record["isCompleted"] as? Int ?? 0) == 1
+                if let jsonString = record["awardedMilestones"] as? String,
+                   let data = jsonString.data(using: .utf8),
+                   let array = try? JSONDecoder().decode([Int].self, from: data) {
+                    goal.awardedMilestones = Set(array)
+                }
+                return goal
+            } ?? []
+
+            completion(.success(goals))
+        }
     }
 }
