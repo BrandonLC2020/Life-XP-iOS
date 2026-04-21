@@ -8,6 +8,10 @@ struct AddHabitView: View {
     @State private var description = ""
     @State private var xpReward = 10
     @State private var category: HabitCategory = .physical
+    @State private var enableReminder = false
+    @State private var reminderTime = Calendar.current.date(
+        bySettingHour: 9, minute: 0, second: 0, of: Date()
+    ) ?? Date()
 
     var body: some View {
         NavigationView {
@@ -32,6 +36,13 @@ struct AddHabitView: View {
                 Section(header: Text("Reward")) {
                     Stepper("\(xpReward) XP", value: $xpReward, in: 5...100, step: 5)
                 }
+
+                Section(header: Text("Reminder")) {
+                    Toggle("Daily Reminder", isOn: $enableReminder)
+                    if enableReminder {
+                        DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    }
+                }
             }
             .navigationTitle("New Habit")
             .toolbar {
@@ -40,8 +51,11 @@ struct AddHabitView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        viewModel.addHabit(title: title, description: description,
-                                          experiencePoints: xpReward, category: category)
+                        viewModel.addHabit(
+                            title: title, description: description,
+                            experiencePoints: xpReward, category: category,
+                            reminderTime: enableReminder ? reminderTime : nil
+                        )
                         dismiss()
                     }
                     .disabled(title.isEmpty)

@@ -96,8 +96,13 @@ class CloudKitManager {
                     record["xpReward"] = habit.xpReward as CKRecordValue
                     record["frequency"] = habit.frequency.rawValue as CKRecordValue
                     record["category"] = habit.category.rawValue as CKRecordValue
+                    record["currentStreak"] = habit.currentStreak as CKRecordValue
+                    record["longestStreak"] = habit.longestStreak as CKRecordValue
                     if let lastDate = habit.lastCompletedDate {
                         record["lastCompletedDate"] = lastDate as CKRecordValue
+                    }
+                    if let reminderTime = habit.reminderTime {
+                        record["reminderTime"] = reminderTime as CKRecordValue
                     }
                     return record
                 }
@@ -132,6 +137,9 @@ class CloudKitManager {
 
                 var habit = Habit(title: title, description: description, xpReward: xpReward, frequency: frequency)
                 habit.lastCompletedDate = record["lastCompletedDate"] as? Date
+                habit.currentStreak = record["currentStreak"] as? Int ?? 0
+                habit.longestStreak = record["longestStreak"] as? Int ?? 0
+                habit.reminderTime = record["reminderTime"] as? Date
                 if let categoryString = record["category"] as? String,
                    let category = HabitCategory(rawValue: categoryString) {
                     habit.category = category

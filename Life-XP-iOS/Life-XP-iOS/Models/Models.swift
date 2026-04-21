@@ -69,6 +69,9 @@ struct Habit: Identifiable, Codable {
     var frequency: HabitFrequency
     var category: HabitCategory = .physical
     var lastCompletedDate: Date?
+    var currentStreak: Int = 0
+    var longestStreak: Int = 0
+    var reminderTime: Date?
     var isCompletedToday: Bool {
         guard let lastCompletedDate = lastCompletedDate else { return false }
         return Calendar.current.isDateInToday(lastCompletedDate)

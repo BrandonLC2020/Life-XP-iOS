@@ -60,13 +60,31 @@ struct HabitRowView: View {
                 Text(habit.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                HStack {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
-                        .font(.system(size: 10))
-                    Text("\(habit.xpReward) XP")
-                        .font(.caption2)
-                        .foregroundColor(.blue)
+                HStack(spacing: 8) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.yellow)
+                            .font(.system(size: 10))
+                        Text("\(habit.xpReward) XP")
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                    }
+                    if habit.currentStreak > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "flame.fill")
+                                .foregroundColor(habit.currentStreak >= 7 ? .red : .orange)
+                                .font(.system(size: 10))
+                            Text("\(habit.currentStreak)d")
+                                .font(.caption2)
+                                .foregroundColor(habit.currentStreak >= 7 ? .red : .orange)
+                                .fontWeight(habit.currentStreak >= 7 ? .bold : .regular)
+                        }
+                    }
+                    if habit.reminderTime != nil {
+                        Image(systemName: "bell.fill")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 9))
+                    }
                 }
             }
 

@@ -74,12 +74,16 @@ class UserViewModel: ObservableObject {
         if !skipCloudSync {
             fetchFromCloud()
         }
+        requestNotificationPermission()
+        resetBrokenStreaks()
+        scheduleAllReminders()
         midnightObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.significantTimeChangeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             self?.user.checkNewDay()
+            self?.resetBrokenStreaks()
         }
     }
 
@@ -274,15 +278,18 @@ class UserViewModel: ObservableObject {
     }
 
     func addHabit(title: String, description: String, experiencePoints: Int,
-                  category: HabitCategory = .physical) {
-        let newHabit = Habit(title: title, description: description,
+                  category: HabitCategory = .physical, reminderTime: Date? = nil) {
+        var newHabit = Habit(title: title, description: description,
                              xpReward: experiencePoints, frequency: .daily, category: category)
+        newHabit.reminderTime = reminderTime
         habits.append(newHabit)
+        if reminderTime != nil { scheduleReminder(for: newHabit) }
         saveHabits()
         uploadToCloud()
     }
 
     func deleteHabit(at offsets: IndexSet) {
+        offsets.forEach { cancelReminder(for: habits[$0]) }
         habits.remove(atOffsets: offsets)
         saveHabits()
         uploadToCloud()
@@ -290,7 +297,13 @@ class UserViewModel: ObservableObject {
 
     func completeHabit(_ habit: Habit) {
         guard let index = habits.firstIndex(where: { $0.id == habit.id }) else { return }
+        let prevDate = habits[index].lastCompletedDate
         habits[index].lastCompletedDate = Date()
+        let newStreak = prevDate.map { Calendar.current.isDateInYesterday($0) } == true
+            ? habits[index].currentStreak + 1
+            : 1
+        habits[index].currentStreak = newStreak
+        if newStreak > habits[index].longestStreak { habits[index].longestStreak = newStreak }
         addExperience(habit.xpReward)
         user.gold += habit.xpReward / 2 + user.charisma / 10
         switch habit.category {
@@ -371,87 +384,6 @@ class UserViewModel: ObservableObject {
             case .manual:
                 break
             }
-        }
-    }
-
-    private func checkMilestones(for goal: Goal) {
-        guard let index = goals.firstIndex(where: { $0.id == goal.id }) else { return }
-        let percent = goal.progressPercent
-
-        for threshold in [25, 50, 75, 100] {
-            if percent >= threshold && !goals[index].awardedMilestones.contains(threshold) {
-                goals[index].awardedMilestones.insert(threshold)
-                if threshold == 100 {
-                    goals[index].isCompleted = true
-                }
-                awardMilestone(goals[index], threshold: threshold)
-            }
-        }
-    }
-
-    private func awardMilestone(_ goal: Goal, threshold: Int) {
-        let xpAmount = milestoneXP(for: threshold)
-        let gold = milestoneGold(for: threshold)
-        let statBoost = milestoneStatBoost(for: threshold)
-        addExperience(xpAmount)
-        user.gold += gold
-        applyStatBoost(statBoost, for: goal.category)
-
-        if threshold == 100 {
-            let trophy = Item(
-                name: "\(goal.title) Trophy",
-                description: "Completed: \(goal.title)",
-                icon: "trophy.fill",
-                price: 0,
-                statBoost: nil,
-                boostAmount: 0
-            )
-            user.inventory.append(trophy)
-        }
-
-        lastMilestoneMessage = "\(goal.title) \(threshold)% complete! +\(xpAmount) XP, +\(gold) Gold"
-        showingMilestoneReward = true
-    }
-
-    private func milestoneXP(for threshold: Int) -> Int {
-        switch threshold {
-        case 25:  return 25
-        case 50:  return 50
-        case 75:  return 100
-        case 100: return 200
-        default:  return 0
-        }
-    }
-
-    private func milestoneGold(for threshold: Int) -> Int {
-        switch threshold {
-        case 25:  return 10
-        case 50:  return 25
-        case 75:  return 50
-        case 100: return 100
-        default:  return 0
-        }
-    }
-
-    private func milestoneStatBoost(for threshold: Int) -> Int {
-        switch threshold {
-        case 25:  return 1
-        case 50:  return 2
-        case 75:  return 3
-        case 100: return 5
-        default:  return 0
-        }
-    }
-
-    private func applyStatBoost(_ amount: Int, for category: GoalCategory) {
-        switch category {
-        case .fitness:   user.strength += amount
-        case .wellness:  user.vitality += amount
-        case .learning:  user.intelligence += amount
-        case .financial:
-            user.intelligence += (amount + 1) / 2
-            user.charisma += amount / 2
-        case .social:    user.charisma += amount
         }
     }
 
