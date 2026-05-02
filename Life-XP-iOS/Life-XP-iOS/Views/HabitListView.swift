@@ -12,6 +12,7 @@ private func categoryColor(_ category: HabitCategory) -> Color {
 struct HabitListView: View {
     @ObservedObject var viewModel: UserViewModel
     @State private var showingAddHabit = false
+    @State private var showingLockInView = false
 
     var body: some View {
         NavigationView {
@@ -27,6 +28,20 @@ struct HabitListView: View {
             }
             .navigationTitle("Habits")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if viewModel.user.activeLockIn == nil {
+                        Button(action: {
+                            showingLockInView.toggle()
+                        }, label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "lock.shield.fill")
+                                Text("Lock In")
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        })
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         showingAddHabit.toggle()
@@ -37,6 +52,9 @@ struct HabitListView: View {
             }
             .sheet(isPresented: $showingAddHabit) {
                 AddHabitView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingLockInView) {
+                CreateLockInView(viewModel: viewModel)
             }
         }
     }

@@ -7,6 +7,11 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // Lock In Banner
+                if let challenge = viewModel.user.activeLockIn {
+                    LockInBanner(challenge: challenge)
+                }
+
                 // Character Header
                 HStack(alignment: .center, spacing: 15) {
                     Circle()
@@ -253,5 +258,61 @@ struct HealthStatCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemBackground)).shadow(radius: 1))
+    }
+}
+
+struct LockInBanner: View {
+    let challenge: LockInChallenge
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("LOCK IN ACTIVE")
+                        .font(.caption)
+                        .fontWeight(.black)
+                        .foregroundColor(.orange)
+
+                    Text("Day \(currentDay) of \(challenge.durationDays)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                }
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    ForEach(0..<challenge.maxStrikes, id: \.self) { index in
+                        Image(systemName: index < challenge.strikesCount ? "heart.slash.fill" : "heart.fill")
+                            .foregroundColor(index < challenge.strikesCount ? .gray : .red)
+                    }
+                }
+            }
+
+            ProgressView(value: progress)
+                .tint(.orange)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color(.systemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(LinearGradient(colors: [.orange, .yellow], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
+                )
+                .shadow(radius: 5)
+        )
+        .padding(.horizontal)
+    }
+
+    private var currentDay: Int {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: challenge.startDate)
+        let today = calendar.startOfDay(for: Date())
+        let components = calendar.dateComponents([.day], from: start, to: today)
+        return min((components.day ?? 0) + 1, challenge.durationDays)
+    }
+
+    private var progress: Double {
+        Double(currentDay) / Double(challenge.durationDays)
     }
 }

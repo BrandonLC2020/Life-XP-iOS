@@ -51,6 +51,13 @@ struct ContentView: View {
                     .transition(.opacity)
                     .zIndex(100)
             }
+
+            // Lock In Reward Overlay
+            if userViewModel.showingLockInReward {
+                LockInRewardOverlay(viewModel: userViewModel)
+                    .transition(.opacity)
+                    .zIndex(110)
+            }
         }
         .onAppear {
             healthKitManager.requestAuthorization { success, _ in

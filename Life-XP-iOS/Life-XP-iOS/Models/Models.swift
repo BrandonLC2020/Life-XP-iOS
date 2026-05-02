@@ -199,6 +199,7 @@ struct LockInChallenge: Identifiable, Codable {
     var strikesCount: Int = 0
     var maxStrikes: Int = 3
     var status: ChallengeStatus = .active
+    var lastEvaluationDate: Date?
 
     var endDate: Date {
         Calendar.current.date(byAdding: .day, value: durationDays, to: startDate) ?? startDate
