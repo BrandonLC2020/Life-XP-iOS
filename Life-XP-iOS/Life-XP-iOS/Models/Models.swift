@@ -14,6 +14,10 @@ struct LifeXPUser: Codable {
 
     var inventory: [Item] = []
 
+    // Lock In Mode
+    var activeLockIn: LockInChallenge?
+    var pastLockIns: [LockInChallenge] = []
+
     // Tracking sync to avoid double-counting
     var lastSyncedSteps: Int = 0
     var lastSyncedCalories: Double = 0.0
@@ -178,5 +182,25 @@ struct Goal: Identifiable, Codable {
 
     var progressPercent: Int {
         Int(progressFraction * 100)
+    }
+}
+
+// MARK: - Lock In Mode
+
+enum ChallengeStatus: String, Codable {
+    case active, failed, completed
+}
+
+struct LockInChallenge: Identifiable, Codable {
+    var id = UUID()
+    var habitIDs: [UUID]
+    var startDate: Date
+    var durationDays: Int
+    var strikesCount: Int = 0
+    var maxStrikes: Int = 3
+    var status: ChallengeStatus = .active
+
+    var endDate: Date {
+        Calendar.current.date(byAdding: .day, value: durationDays, to: startDate) ?? startDate
     }
 }
