@@ -10,6 +10,9 @@ class UserViewModel: ObservableObject {
     @Published var showingMilestoneReward = false
     @Published var lastMilestoneMessage = ""
 
+    @Published var showingLockInReward = false
+    @Published var lockInRewardMessage = ""
+
     // Level Up State
     @Published var showingLevelUp = false
     @Published var lastLeveledUpTo = 0
@@ -76,6 +79,7 @@ class UserViewModel: ObservableObject {
         }
         requestNotificationPermission()
         resetBrokenStreaks()
+        evaluateLockIn()
         scheduleAllReminders()
         midnightObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.significantTimeChangeNotification,
@@ -83,6 +87,7 @@ class UserViewModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             self?.user.checkNewDay()
+            self?.evaluateLockIn()
             self?.resetBrokenStreaks()
         }
     }
@@ -304,14 +309,21 @@ class UserViewModel: ObservableObject {
             : 1
         habits[index].currentStreak = newStreak
         if newStreak > habits[index].longestStreak { habits[index].longestStreak = newStreak }
-        addExperience(habit.xpReward)
-        user.gold += habit.xpReward / 2 + user.charisma / 10
-        switch habit.category {
-        case .physical: if Int.random(in: 1...3) == 1 { user.strength += 1 }
-        case .mental:   if Int.random(in: 1...3) == 1 { user.intelligence += 1 }
-        case .health:   if Int.random(in: 1...3) == 1 { user.vitality += 1 }
-        case .social:   user.charisma += 1
+
+        // Intercept rewards if habit is in an active Lock In challenge
+        if let activeChallenge = user.activeLockIn, activeChallenge.habitIDs.contains(habit.id) {
+            // Deferred rewards - will be awarded during daily evaluation
+        } else {
+            addExperience(habit.xpReward)
+            user.gold += habit.xpReward / 2 + user.charisma / 10
+            switch habit.category {
+            case .physical: if Int.random(in: 1...3) == 1 { user.strength += 1 }
+            case .mental:   if Int.random(in: 1...3) == 1 { user.intelligence += 1 }
+            case .health:   if Int.random(in: 1...3) == 1 { user.vitality += 1 }
+            case .social:   user.charisma += 1
+            }
         }
+
         saveHabits()
         uploadToCloud()
     }
@@ -409,5 +421,74 @@ class UserViewModel: ObservableObject {
                 self.showingLevelUp = true
             }
         }
+    }
+
+    func evaluateLockIn() {
+        guard var challenge = user.activeLockIn else { return }
+
+        let calendar = Calendar.current
+
+        // Skip if already evaluated today
+        if let lastEval = challenge.lastEvaluationDate, calendar.isDateInToday(lastEval) {
+            return
+        }
+
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+
+        // Check if all habits in the challenge were completed yesterday
+        let challengeHabits = habits.filter { challenge.habitIDs.contains($0.id) }
+        let allCompleted = challengeHabits.allSatisfy { habit in
+            guard let lastCompleted = habit.lastCompletedDate else { return false }
+            return calendar.isDate(lastCompleted, inSameDayAs: yesterday)
+        }
+
+        challenge.lastEvaluationDate = Date()
+
+        if allCompleted {
+            // Reward: Add XP and Gold (half XP) for all challenge habits
+            let totalXP = challengeHabits.reduce(0) { $0 + $1.xpReward }
+            addExperience(totalXP)
+            user.gold += totalXP / 2
+
+            // Check if challenge is finished
+            if calendar.isDateInToday(challenge.endDate) || Date() > challenge.endDate {
+                challenge.status = .completed
+
+                // Completion Rewards
+                addExperience(1000)
+                user.gold += 500
+
+                let trophy = Item(
+                    name: "\(challenge.durationDays)-Day Lock In Trophy",
+                    description: "Awarded for completing a Lock In challenge.",
+                    icon: "lock.shield.fill",
+                    price: 0,
+                    statBoost: .vitality,
+                    boostAmount: 10
+                )
+                user.inventory.append(trophy)
+
+                lockInRewardMessage = "Challenge Complete! You earned 1000 XP, 500 Gold, and the \(challenge.durationDays)-Day Trophy!"
+                showingLockInReward = true
+
+                user.pastLockIns.append(challenge)
+                user.activeLockIn = nil
+            } else {
+                user.activeLockIn = challenge
+            }
+        } else {
+            // Strike!
+            challenge.strikesCount += 1
+            if challenge.strikesCount >= challenge.maxStrikes {
+                challenge.status = .failed
+                user.pastLockIns.append(challenge)
+                user.activeLockIn = nil
+            } else {
+                user.activeLockIn = challenge
+            }
+        }
+
+        saveUser()
+        uploadToCloud()
     }
 }
