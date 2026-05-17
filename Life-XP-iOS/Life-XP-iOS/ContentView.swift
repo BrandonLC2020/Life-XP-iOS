@@ -111,9 +111,14 @@ struct SettingsView: View {
                     }
 
                     Button("Request Permissions") {
-                        healthKitManager.requestAuthorization { _, _ in }
+                        if healthKitManager.isAuthorized {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } else {
+                            healthKitManager.requestAuthorization { _, _ in }
+                        }
                     }
-                    .disabled(healthKitManager.isAuthorized)
                 }
             }
             .navigationTitle("Settings")
