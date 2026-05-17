@@ -74,9 +74,6 @@ class UserViewModel: ObservableObject {
         loadUser()
         loadHabits()
         loadGoals()
-        if !skipCloudSync {
-            fetchFromCloud()
-        }
         requestNotificationPermission()
         resetBrokenStreaks()
         evaluateLockIn()
@@ -382,16 +379,20 @@ class UserViewModel: ObservableObject {
             case .steps:
                 healthKitManager.fetchCumulativeSteps(from: start, to: end) { [weak self] total in
                     guard let self else { return }
-                    self.goals[index].currentProgress = total
-                    self.checkMilestones(for: self.goals[index])
-                    self.uploadToCloud()
+                    if let idx = self.goals.firstIndex(where: { $0.id == goal.id }) {
+                        self.goals[idx].currentProgress = total
+                        self.checkMilestones(for: self.goals[idx])
+                        self.uploadToCloud()
+                    }
                 }
             case .calories:
                 healthKitManager.fetchCumulativeCalories(from: start, to: end) { [weak self] total in
                     guard let self else { return }
-                    self.goals[index].currentProgress = total
-                    self.checkMilestones(for: self.goals[index])
-                    self.uploadToCloud()
+                    if let idx = self.goals.firstIndex(where: { $0.id == goal.id }) {
+                        self.goals[idx].currentProgress = total
+                        self.checkMilestones(for: self.goals[idx])
+                        self.uploadToCloud()
+                    }
                 }
             case .manual:
                 break
@@ -433,7 +434,7 @@ class UserViewModel: ObservableObject {
             return
         }
 
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) else { return }
 
         // Check if all habits in the challenge were completed yesterday
         let challengeHabits = habits.filter { challenge.habitIDs.contains($0.id) }

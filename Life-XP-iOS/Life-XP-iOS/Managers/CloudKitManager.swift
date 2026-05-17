@@ -4,8 +4,8 @@ import CloudKit
 class CloudKitManager {
     static let shared = CloudKitManager()
 
-    let container = CKContainer.default()
-    let privateDatabase = CKContainer.default().privateCloudDatabase
+    lazy var container = CKContainer.default()
+    lazy var privateDatabase = container.privateCloudDatabase
 
     // User Record Type
     let userRecordType = "UserStats"

@@ -27,6 +27,7 @@
 		71A95A1C2F12E92E00509928 /* Life-XP-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life-XP-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		71A95A292F12E92F00509928 /* Life-XP-iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Life-XP-iOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		71A95A332F12E92F00509928 /* Life-XP-iOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Life-XP-iOSUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		71AD1F472FB9F7D700361698 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/HealthKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +79,7 @@
 				71A95A1E2F12E92E00509928 /* Life-XP-iOS */,
 				71A95A2C2F12E92F00509928 /* Life-XP-iOSTests */,
 				71A95A362F12E92F00509928 /* Life-XP-iOSUITests */,
+				71AD1F462FB9F7D700361698 /* Frameworks */,
 				71A95A1D2F12E92E00509928 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +92,14 @@
 				71A95A332F12E92F00509928 /* Life-XP-iOSUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		71AD1F462FB9F7D700361698 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				71AD1F472FB9F7D700361698 /* HealthKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -394,6 +404,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Life-XP-iOS/Life-XP-iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -441,6 +452,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Life-XP-iOS/Life-XP-iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
