@@ -61,3 +61,11 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# AI Agent Context & Instructions (Secret Sauce)
+.agent/
+.claude/
+.gemini/
+agent.md
+CLAUDE.md
+GEMINI.md
